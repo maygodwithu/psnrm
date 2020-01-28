@@ -14,7 +14,8 @@ import argparse
 
 from dictionary import Dictionary
 from Triplet import Triplet
-from psnrm import SNRM
+#from psnrm import SNRM
+from path_snrm import SNRM
 import sys
 from inverted_index import InMemoryInvertedIndex
 
@@ -41,6 +42,10 @@ def train():
             accs = snrm.model_train(query, doc1, doc2, label)
             if(i % 1 == 0):
                 print('epoch : ', epoch, ' step:', i, '\ttraing cost:', accs.item(), '\r', file=sys.stderr, end='')  
+
+            if(i % 100 == 0):
+                ## evaluation()                                 ## evaluation per 100-batch  
+                torch.save(snrm.state_dict(), args.model_file)  ## save model per 100-batch
 
         torch.save(snrm.state_dict(), args.model_file)  ## save model per epoch
 
@@ -142,14 +147,15 @@ if __name__ == '__main__':
     argparser.add_argument('--mode', type=str, help='run mode', default='train')
 
     ## Hyper parameter
-    argparser.add_argument('--epoch', type=int, help='epoch number', default=100) ## 100000
-    argparser.add_argument('--batch_size', type=int, help='batch size', default=128)  ## 512
+    argparser.add_argument('--epoch', type=int, help='epoch number', default=1000) ## 100000
+    argparser.add_argument('--batch_size', type=int, help='batch size', default=64)  ## 512
     argparser.add_argument('--learning_rate', type=float, help='learning rate with ADAM', default=0.0001)
     argparser.add_argument('--dropout_parameter', type=float, help='dropout', default=0.0)
-    argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0001)
+    argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0000001) ## 0.1^10-8 ( sparcity : 0.65)
+    #argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0001)
 
     ## file name
-    argparser.add_argument('--emb_dim', type=int, help='embedding dimension', default=100)
+    argparser.add_argument('--emb_dim', type=int, help='embedding dimension', default=300)
     argparser.add_argument('--dict_file', type=str, help='dictionary file name', default='data/dictionary.txt')
     argparser.add_argument('--train_file', type=str, help='train file name', default='data/triples.tsv')
     argparser.add_argument('--doc_file', type=str, help='doc file name', default='data/triples.tsv_doc_100')
@@ -162,7 +168,7 @@ if __name__ == '__main__':
     ## conv channel
     argparser.add_argument('--conv1_channel', type=int, help='channel length', default=500)
     argparser.add_argument('--conv2_channel', type=int, help='channel length', default=300)
-    argparser.add_argument('--conv3_channel', type=int, help='channel length', default=5000)
+    argparser.add_argument('--conv3_channel', type=int, help='channel length', default=10000)
 
     ## query, document max len
     argparser.add_argument('--max_q_len', type=int, help='maximum query length', default=10)

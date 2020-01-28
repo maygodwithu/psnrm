@@ -18,6 +18,34 @@ from path_snrm import SNRM
 import sys
 from epath import epathfinder
 
+def printResult(x, nrs, outfile):
+    if(type(nrs) is torch.Tensor):
+        saveResult(x, nrs, outfile)
+    elif(type(nrs) is list):
+        fn = 0
+        for nr in nrs:
+            tout = outfile + str(fn)
+            saveResult(x, nr, tout)
+            fn += 1
+
+def saveResult(x, nrs, outfile):
+    x_bar = torch.zeros(x.shape)         
+    x_bar.flatten()[ nrs[0].long() ] = nrs[2]
+    word_sum = torch.sum(x_bar, dim=(0,1,2)) ## last dimesion is for word
+    print('word sum nonzero count = ', len(word_sum[word_sum>0]))
+    tv, tp = torch.sort(word_sum, descending=True)
+    print('top 20 position=', tp[:20])
+    print('top 20 value=', tv[:20])
+    # count per word
+    x_bar = torch.zeros(x.shape)         
+    x_bar.flatten()[ nrs[0].long() ] = 1
+    word_count = torch.sum(x_bar, dim=(0,1,2)) ## last dimesion is for word
+    tv, tp = torch.sort(word_count, descending=True)
+    print('top 20 count position=', tp[:20])
+    print('top 20 count =', tv[:20])
+ 
+    torch.save(nrs, outfile)
+
 def path_main():
     print('e-path find.', file=sys.stderr)
     #1. read dictionary
@@ -38,11 +66,18 @@ def path_main():
    
     #5. effective path
     ep = epathfinder(snrm)      ## pathfinder initialize
-    outfile = "./result/epath.out"
+    outfile = "./result/epath.one"
+    #outfile = "./result/epath.all"
+    #outfile = "./result/each/epath"
 
     with torch.no_grad():
         for i, (doc_id, doc)  in enumerate(db_loader):
-            ep.find_epath(doc.float(), Class=None, Theta=0.9, File=outfile)
+            print('doc_id', doc_id)
+            #print('doc', doc.shape)
+            nrs = ep.find_epath(doc.float(), Class=None, Theta=0.8, File=outfile)
+            #nrs = ep.find_eallpath(doc.float(), Class=None, Theta=0.8, File=outfile)
+            #nrs = ep.find_eachpath(doc.float(), Class=None, Theta=0.8, File=outfile)
+            printResult(doc.float(), nrs, outfile)
             break
 
 if __name__ == '__main__':
@@ -60,7 +95,7 @@ if __name__ == '__main__':
     argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0001)
 
     ## file name
-    argparser.add_argument('--emb_dim', type=int, help='embedding dimension', default=100)
+    argparser.add_argument('--emb_dim', type=int, help='embedding dimension', default=300)
     argparser.add_argument('--dict_file', type=str, help='dictionary file name', default='data/dictionary.txt')
     argparser.add_argument('--train_file', type=str, help='train file name', default='data/triples.tsv')
     argparser.add_argument('--doc_file', type=str, help='doc file name', default='data/triples.tsv_doc_100')
@@ -73,7 +108,7 @@ if __name__ == '__main__':
     ## conv channel
     argparser.add_argument('--conv1_channel', type=int, help='channel length', default=500)
     argparser.add_argument('--conv2_channel', type=int, help='channel length', default=300)
-    argparser.add_argument('--conv3_channel', type=int, help='channel length', default=5000)
+    argparser.add_argument('--conv3_channel', type=int, help='channel length', default=10000)
 
     ## query, document max len
     argparser.add_argument('--max_q_len', type=int, help='maximum query length', default=10)

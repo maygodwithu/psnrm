@@ -307,7 +307,64 @@ class epathfinder():
 
         return nrs
 
-    def find_epath(self, x, Class=None, Theta=0.6, File='epath.out'):
+    def find_eallpath(self, x, Class=None, Theta=0.8, File='epath.out'):
+        ##1. walk on normal path with saving info.
+        print('>>first forward process (saving information) ', file=sys.stderr)
+        y = self.first_pass(x)
+        class_num = len(y[y>0])
+
+        if self._verbose:
+            print('count(repr dimension > 0) = ', class_num)
+
+        # set initial point
+        init_nr = torch.zeros(3, class_num)  ## make initial path [[neuron, value]]
+        total_v = torch.sum(y)
+        if(total_v == 0): total_v = 1.0
+
+        tv, tp = torch.sort(y.flatten(), descending=True)
+        for i in range(class_num):
+            init_nr[0,i] = tp[i].item()
+            init_nr[1,i] = tv[i].item()
+            init_nr[2,i] = tv[i].item() / total_v
+        print('init_nr shape = ', init_nr.shape)
+        print('init_nr = ', init_nr)
+    
+        ##2. 
+        print('>>second e-backward process (find e-path) ', file=sys.stderr)
+        with torch.no_grad(): 
+            nrs = self.e_backward(x, init_nr, Theta)
+        
+        print('(last) input layer', x.flatten().shape, nrs.shape, file=sys.stderr) 
+
+        return nrs
+
+    def find_eachpath(self, x, Class=None, Theta=0.8, File='epath.out'):
+        ##1. walk on normal path with saving info.
+        print('>>first forward process (saving information) ', file=sys.stderr)
+        y = self.first_pass(x)
+        class_num = len(y[y>0])
+
+        if self._verbose:
+            print('count(repr dimension > 0) = ', class_num)
+
+        # set initial point
+        total_v = torch.sum(y)
+        if(total_v == 0): total_v = 1.0
+   
+        with torch.no_grad(): 
+            nrs_list = []
+            tv, tp = torch.sort(y.flatten(), descending=True)
+            for i in range(class_num):
+                init_nr = torch.zeros(3, 1)  ## make initial path [[neuron, value]]
+                init_nr[0,0] = tp[i].item()
+                init_nr[1,0] = tv[i].item()
+                init_nr[2,0] = tv[i].item() / total_v
+                nrs = self.e_backward(x, init_nr, Theta)
+                nrs_list.append(nrs.data)
+
+        return nrs_list
+
+    def find_epath(self, x, Class=None, Theta=0.8, File='epath.out'):
         ##1. walk on normal path with saving info.
         print('>>first forward process (saving information) ', file=sys.stderr)
         y = self.first_pass(x)
@@ -315,17 +372,21 @@ class epathfinder():
             tv, tp = torch.max(y.flatten(), 0)
             Class = int(tp.item())    
             print('Max class = ', Class, ', value = ', tv.item(), file=sys.stderr)
+        if self._verbose:
+            print('count(repr dimension > 0) = ', len(y[y>0]))
 
         ##2. 
         print('>>second e-backward process (find e-path) ', file=sys.stderr)
-        init_nr = torch.zeros(2,1)  ## make initial path [[neuron, value]]
+        init_nr = torch.zeros(3,1)  ## make initial path [[neuron, value]]
         init_nr[0,0] = Class          ## setting class
-        init_nr[1,0] = y[0, Class]         
+        init_nr[1,0] = y[0, Class]    ## setting value of class    
+        init_nr[2,0] = 1.0            ## setting 'relevance'
         nrs = self.e_backward(x, init_nr, Theta)
         
-        ##
         print('(last) input layer', x.flatten().shape, nrs.shape, file=sys.stderr) 
-        torch.save(nrs, File)
+
+        #torch.save(nrs, File)
+        return nrs
 
 if __name__ == '__main__':
     import my_vgg 

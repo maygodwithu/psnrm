@@ -17,11 +17,11 @@ class Triplet(Dataset):
         self.max_doc_len = args.max_doc_len
         self.len = 0
 
-        if(args.mode == 'train'):
+        if(self.mode == 'train'):
             data_file = args.train_file
-        elif(args.mode == 'build_index'):
+        elif(self.mode == 'doc'):
             data_file = args.doc_file
-        elif(args.mode == 'retrieve'):
+        elif(self.mode == 'query'):
             data_file = args.query_file
 
         self.datalines = self.loadData(data_file)
@@ -64,7 +64,8 @@ class Triplet(Dataset):
             query = torch.from_numpy(self.len_check(query, self.max_q_len))
             doc1 = torch.from_numpy(self.len_check(doc1, self.max_doc_len))
             doc2 = torch.from_numpy(self.len_check(doc2, self.max_doc_len))
-            label = torch.from_numpy(np.concatenate([label, 0-label]))
+            #label = torch.from_numpy(np.concatenate([label, 0-label]))
+            label = torch.from_numpy(np.concatenate([0-label, label]))
   
             #print(query)
             #print(query.shape)

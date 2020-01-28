@@ -49,9 +49,14 @@ def getcontent(docid, f):
         f"Looking for {docid}, found {line}"
     return line.rstrip()
 
-def term_transform(org_str, limit):
+def query_transform(org_str, limit):
     new_str=''
     ti=0
+
+    org_str=org_str.replace('"', '')
+    org_str=org_str.replace('(', '')
+    org_str=org_str.replace(')', '')
+
     for t in (org_str.lower()).split(' '):
         if(new_str != ''):
             new_str += ',' 
@@ -61,6 +66,29 @@ def term_transform(org_str, limit):
             new_str += "0"  ##   0 .. from train.py of snrm
         ti += 1
         if(ti >= limit): break
+    return new_str
+
+def term_transform(org_str, limit):
+    cat_str=''
+    for s in (org_str.split('\t'))[3:]:
+        cat_str += (s + ' ')
+    cat_str=cat_str.replace('"', '')
+
+    #print("!!")
+    #print(cat_str)
+    new_str=''
+    ti=0
+    for t in (cat_str.lower()).split(' '):
+        if(new_str != ''):
+            new_str += ',' 
+        if(t in term):
+            new_str += term[t]
+        else:
+            new_str += "0"  ##   0 .. from train.py of snrm
+        ti += 1
+        if(ti >= limit): break
+    #    print(t)
+    #    print(new_str)
     return new_str
 
 def generate_triples(outfile, triples_to_generate):
@@ -118,11 +146,11 @@ def generate_triples(outfile, triples_to_generate):
             orgout.write(topicid + "\t" + querystring[topicid] + "\t" +
                       getcontent(positive_docid, f) + "\t" +
                       getcontent(unjudged_docid, f) + "\n")
-            out.write(term_transform(querystring[topicid], 10) + "\t" +
+            out.write(query_transform(querystring[topicid], 10) + "\t" +
                        term_transform(getcontent(positive_docid, f), 1000) + "\t" +
                        term_transform(getcontent(unjudged_docid, f), 1000) + "\t1\n")
             docout.write(str(positive_docid) + "\t" + term_transform(getcontent(positive_docid, f), 1000) + "\n")
-            qout.write(str(topicid) + "\t" + term_transform(querystring[topicid], 10) + "\n")
+            qout.write(str(topicid) + "\t" + query_transform(querystring[topicid], 10) + "\n")
 
 
             triples_to_generate -= 1
@@ -134,7 +162,8 @@ def generate_triples(outfile, triples_to_generate):
 
 
 #stats = generate_triples("./data/triples.tsv", 1000)
-stats = generate_triples("./data/triples.tsv", 50000)
+stats = generate_triples("./data/triples.tsv", 100000)
+#stats = generate_triples("./data/test.tsv", 2)
 
 for key, val in stats.items():
     print(f"{key}\t{val}")

@@ -6,7 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import util
 import sys
-from mynn.my_emodule import my_ReLU, my_MaxPool2d, my_Conv2d, my_Linear, my_BatchNorm2d, my_AvgPool2d
+from mynn.my_emodule import my_ReLU, my_MaxPool2d, my_Conv2d, my_Linear, my_BatchNorm2d, my_AvgPool2d, my_Mean
 
 class SNRM(nn.Module):
     """
@@ -45,6 +45,7 @@ class SNRM(nn.Module):
         layers += [my_Conv2d(self.conv2_ch, self.conv3_ch, kernel_size=1)]
         layers += [my_ReLU(inplace=True)]
         layers += [nn.Dropout(p=self.dropout_r, inplace=True)]
+        layers += [my_Mean(dim=(2,3))]
         return nn.Sequential(*layers)
 
     def model_train(self, query, doc1, doc2, label):
@@ -65,15 +66,19 @@ class SNRM(nn.Module):
         #print((q_repr*d2_repr).shape)
         #print(logits_d1.shape)
         #print(logits_d2.shape)
-        #print(logits.shape)
         #print(logits)
         #print(label)
+        #print(logits.shape)
         loss = self.loss(logits, label)
         l1_regular = torch.norm(q_repr, p=1)+torch.norm(d1_repr, p=1)+torch.norm(d2_repr, p=1)
         cost = loss + self.regularization * l1_regular
-        #print('loss       =', loss)
-        #print('L1 regualr = ', l1_regular)
-        #print('cost       =', cost)
+        print('loss       =', loss)
+        print('L1 regualr = ', l1_regular)
+        print('cost       =', cost)
+        print('d1 shape       =', d1_repr.shape)
+        print('d1_repr(>0)    =', len(d1_repr[d1_repr>0]))
+        print('d2_repr(>0)    =', len(d2_repr[d2_repr>0]))
+        print('q_repr(>0)     =', len(q_repr[q_repr>0]))
 
         self.optimizer.zero_grad()
         cost.backward()
@@ -84,8 +89,8 @@ class SNRM(nn.Module):
        
     def forward(self, x):
         out = self.features(x)
-        out_mean = torch.mean(out, (2,3)) 
-        return out_mean
+        #out = torch.mean(out, (2,3)) 
+        return out
 
     ###!! Mandatory functions
     # fill_layers()
