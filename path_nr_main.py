@@ -75,7 +75,7 @@ def path_main():
             print('doc_id', doc_id)
             #print('doc', doc.shape)
             nrs = ep.find_epath(doc.float(), Class=None, Theta=0.8, File=outfile)
-            #nrs = ep.find_eallpath(doc.float(), Class=None, Theta=0.8, File=outfile)
+            #nrs = ep.find_eallpath(doc.float(), Class=None, Theta=0.7, File=outfile)
             #nrs = ep.find_eachpath(doc.float(), Class=None, Theta=0.8, File=outfile)
             printResult(doc.float(), nrs, outfile)
             break

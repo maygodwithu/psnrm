@@ -201,6 +201,7 @@ class my_Linear(nn.Module):
             print(i, " th iteration.. \r", file=sys.stderr, end='')
             nr = int(input[0,i].item())
             nv = input[1,i] * theta
+            nw = input[2,i] 
             # weight which are connected to nr
             tweight = self.weight[nr].data 
             tsum = torch.zeros(1)
@@ -223,7 +224,11 @@ class my_Linear(nn.Module):
             else:
                 selp = torch.cat([selp, tp[:tpos].data])
 
-            cur_out[ tp[:tpos].long() ] += tv[:tpos] 
+            #cur_out[ tp[:tpos].long() ] += tv[:tpos] 
+            total_v = torch.sum(tv).item()
+            if(total_v == 0): total_v = 1.0
+            cur_out[ tp[:tpos].long() ] += nw * (tv[:tpos] / total_v)
+
             #if self._everbose:
             if False:
                 print('=== linear ebackwrd ===')
@@ -251,6 +256,7 @@ class my_Linear(nn.Module):
            print('selp shape = ', selp.shape)
            print('prev shape = ', selp.shape)
            print('nrs shape  =', nrs.shape)
+           print('curv sum = ', torch.sum(curv))
            #print(nrs)
         return nrs
 
@@ -616,10 +622,10 @@ class my_Conv2d(_ConvNd):
         self._value = None
         self._index_min = None
         self._value_min = None
-        self._verbose = False
+        self._verbose = True
         self._bverbose = False
         self._cverbose = False
-        self._everbose = False
+        self._everbose = True
         super(my_Conv2d, self).__init__(
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, _pair(0), groups, bias, padding_mode)
@@ -778,10 +784,17 @@ class my_Conv2d(_ConvNd):
             ## modified end
         elif(self._mode == 1):
             self.input_shape = input.shape
+            x = self._conv_forward(input, self.weight)
             if self._verbose:
                 print('=== conv mode1 ===')
                 print('save input shape = ', self.input_shape)
-            x = self._conv_forward(input, self.weight)
+                print('weight shape = ', self.weight.shape)
+                print('out shape = ', x.shape)
+                print('out[>0] = ', len(x[x>0]))
+                print('out[<0] = ', len(x[x<0]))
+                print('out[0] = ', x.flatten()[0])
+                print('weight[>0] = ', len(self.weight[self.weight>0]))
+                print('weight[0,0] = ', self.weight[0,0])
             self._ovalue = x.clone()
             return x
         else: 
@@ -1058,10 +1071,9 @@ class my_Conv2d(_ConvNd):
            un = c_size * wz
            for wx in range(ws[2]):  # weight-x
                for wy in range(ws[3]):  # weight-y
-                   p[pi] = un 
+                   p[pi] = un + (wx * u_jump) 
                    pi += 1
                    un += 1 
-               un = un + u_jump
         return p
 
     def find_conv_pos(self, current_pos, fake_input, tweight, Fix=False):
@@ -1095,8 +1107,10 @@ class my_Conv2d(_ConvNd):
         c_size = ws[2]*ws[3]
         tz = pos // c_size
         residual = pos % c_size
-        tx = residual // ws[2]
-        ty = residual % ws[2]
+        #tx = residual // ws[2]
+        #ty = residual % ws[2]
+        tx = residual // ws[3]
+        ty = residual % ws[3]
         return tz, tx, ty
 
     def modify_pv(self, p, rpos, under_pos):
@@ -1150,6 +1164,8 @@ class my_Conv2d(_ConvNd):
         cur_out = torch.zeros(pre_out.shape) ## current value
         #2. make initial pair. weight - input position & fake input
         init_p = self.make_weightxinput()
+        #print("==initp==")
+        #print(init_p)
         fake_input = self.make_fakeinput(0)
         tweight = self.weight.clone() 
 
@@ -1159,10 +1175,13 @@ class my_Conv2d(_ConvNd):
                 print(i, " th iteration.. \r", file=sys.stderr, end='')
             nr = int(input[0,i].item())
             nv = input[1,i] * theta
+            nw = input[2,i]   ## relevance (cummulated)
             #1. find conv position
             rpos, under_pos = self.find_conv_pos(nr, fake_input, tweight, Fix=True)
             p = init_p.clone()
             p = self.modify_pv(p, rpos, under_pos)
+            #print("==modifyp==")
+            #print(p)
             #2. select value
             zero_p = torch.ones(p.shape)
             zero_p[p<0] *= 0  # <0 invalid
@@ -1192,8 +1211,12 @@ class my_Conv2d(_ConvNd):
             else:
                 selp = torch.cat([selp, p[ tp[:tpos] ].data ])
                 
+            ##
+            total_v = torch.sum(tv).item()
+            if(total_v == 0): total_v = 1.0
+  
             sep = p[ tp[:tpos] ]
-            cur_out[sep.long()] += tv[:tpos] 
+            cur_out[sep.long()] += nw * (tv[:tpos] / total_v)
             #if self._everbose:
             if False:
                 print('sel val shape =', sel_val.shape)
@@ -1203,12 +1226,16 @@ class my_Conv2d(_ConvNd):
                 print("out pos = ", nr)
                 print('tv shape =', tv.shape)
                 print('limit value =', nv)
+                print('tv total sum =', total_v)
+                print('nw =', nw)
+                #print('bias =', self.bias)
                 print('tv top  =', tv[0])
                 print('tsum  =', tsum)
-                print('tp  =', tp)
+                #print('tp  =', tp)
                 print('tpos  =', tpos)
                 print('p  =', p[ tp[:tpos] ])
                 print('selp shape =', selp.shape)
+                print('cur_out[>0] =', cur_out[cur_out>0])
        
         selp = torch.unique(selp, sorted=False)
         prev = torch.index_select(pre_out, 0, selp.long())
@@ -1220,6 +1247,8 @@ class my_Conv2d(_ConvNd):
            print('weight shape =', self.weight.shape)
            print('selp shape = ', selp.shape)
            print('nrs shape  =', nrs.shape)
+           print('curv sum = ', torch.sum(curv))
+           #print('curv = ', curv)
            #print('==end conv ==')
            #print(nrs)
         return nrs
@@ -1851,5 +1880,111 @@ class my_kMaxPool(nn.Module):
             print('=== kMaxpool ebackwrd ===')
             print('change value confirm..')
         return nrs
+
+class my_Mean(nn.Module):
+    def __init__(self, dim=0):
+        super(my_Mean, self).__init__()
+        self.dim = dim  ## dimension (2,3) fix
+        self._mode = 0
+        self._ovalue = None
+        self._everbose = True
+
+    def forward(self, input):
+        x = torch.mean(input, self.dim) 
+        if(self._mode == 1):
+            self._ovalue = x.clone()
+        return x
+
+    def setMode(self, m):
+        self._mode = m
+
+    def getOValue(self):
+        return self._ovalue
+
+    def getOutShape(self):
+        if(self._ovalue is not None):
+            return self._ovalue.shape
+        else:
+            return None
+
+    def e_backward(self, input, theta, pre_out):
+        #0. compute size ( !Warning : only with dim=(2,3) )
+        assert(self.dim == (2,3))
+        channel_size = pre_out.shape[2] * pre_out.shape[3]
+        #1. flatten
+        #pre_out = pre_out.flatten()
+        cur_out = torch.zeros(pre_out.flatten().shape) ## current value
+        #2. find effective field
+        selp=None
+        for i in range(input.shape[1]):
+            print(i, " th iteration.. \r", file=sys.stderr, end='')
+            nr = int(input[0,i].item())
+            nv = input[1,i] * channel_size * theta
+            nw = input[2,i]   ## relevance (cummulated)
+            # weight which are connected to nr
+            tsum = torch.zeros(1)
+            tpos = 0
+
+            tv, tp = torch.sort(pre_out[0,nr].flatten(), descending=True)
+            for tvi in tv:
+                tsum += tvi
+                tpos += 1
+                if(tsum >= nv): break
+            
+            #print('tp top 1 =', tp[0].item())
+            #print('tp top 2 =', tp[1].item())
+            #print('tv top 1 =', tv[0].item())
+            #print('tv top 2 =', tv[1].item())
+            #print('preout nr value')
+            #pi =0
+            #for pval in pre_out[0,nr].flatten():
+            #    pi += 1
+            #    print(pi, ' = ', pval)
+
+            tp += (nr * channel_size) ## global position
+            if(selp is None):
+                selp = tp[:tpos].data 
+            else:
+                selp = torch.cat([selp, tp[:tpos].data])
+
+            #cur_out[ tp[:tpos].long() ] += tv[:tpos] 
+            total_v = torch.sum(tv).item()
+            if(total_v == 0): total_v = 1.0
+            cur_out[ tp[:tpos].long() ] += nw * (tv[:tpos] / total_v)
+
+            #if self._everbose:
+            if False:
+                print('== mean ebackwrd ==')
+                print('pre_out shape =', pre_out.shape)
+                print("out pos = ", nr)
+                print('tv shape =', tv.shape)
+                print('limit value =', nv)
+                print('tv top  =', tv[0])
+                print('tsum  =', tsum)
+                print('tp shape =', tp.shape)
+                print('selp shape =', selp.shape)
+       
+        selp = torch.unique(selp, sorted=False)
+        prev = torch.index_select(pre_out.flatten(), 0, selp)
+        curv = torch.index_select(cur_out, 0, selp)
+        nrs = torch.stack([selp.float(), prev, curv])
+                    
+        if self._everbose:
+           print('=== mean ebackwrd ===')
+           print('pre_out shape =', pre_out.shape)
+           print('selp shape = ', selp.shape)
+           print('prev shape = ', selp.shape)
+           print('nrs shape  =', nrs.shape)
+           print('channel size  =', channel_size)
+           print('curv sum = ', torch.sum(curv))
+        #   print(nrs)
+        return nrs
+
+    def extra_repr(self):
+        return 'dimension={} '.format(
+            self.dimension is not None
+        )
+
+
 
 

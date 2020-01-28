@@ -40,9 +40,7 @@ class Triplet(Dataset):
         term_to_id, id_to_term, we_matrix = util.load_word_embeddings(pretrained_file, self.emb_dim)
         init_matrix = np.random.random((self.max_dic_size+1, self.emb_dim))
         for i in range(self.max_dic_size):
-            if self.dictionary.id_to_term[i] in term_to_id:
-                tid = term_to_id[self.dictionary.id_to_term[i]]
-                init_matrix[i] = we_matrix[tid]
+            init_matrix[i] = we_matrix[i]
         init_matrix[i+1] = np.zeros([1, self.emb_dim])  ## zero padding
         print(i, ' embeddings are read from the pretrained file', file=sys.stderr)
         return torch.from_numpy(init_matrix)
