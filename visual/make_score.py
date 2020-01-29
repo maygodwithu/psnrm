@@ -40,7 +40,9 @@ for ind in sorted_ind:
 
 #3. draw graph
 plt.figure(figsize=(10, 10))
-df = pd.DataFrame(dict(dim=np.arange(10000), value=doc_repr))
-g = sns.relplot(x='dim', y='value', data=df)
+df = pd.DataFrame(dict(dim=np.arange(10000), value=dot))
+g = sns.relplot(x='dim', y='value', kind="scatter", data=df)
 
-plt.savefig("repr.png")
+#plt.savefig("repr_all.png")
+plt.savefig("score.png")
+
