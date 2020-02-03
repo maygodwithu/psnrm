@@ -75,7 +75,7 @@ def build_index():
    
     inverted_index = InMemoryInvertedIndex(args.conv3_channel)  ## last channel is output representation
     with torch.no_grad():
-        for i, (doc_id, doc)  in enumerate(db_loader):
+        for i, (doc_id, doc, doc_idx)  in enumerate(db_loader):
             doc_repr = snrm(doc.float())
             inverted_index.add(doc_id.numpy(), doc_repr.numpy())
             if(i % 10 == 0):
@@ -110,7 +110,7 @@ def retrieve():
     #6. retrieve
     with torch.no_grad():
         result = dict()
-        for k, (q_id, query)  in enumerate(db_loader):
+        for k, (q_id, query, q_idx)  in enumerate(db_loader):
             query_repr = snrm(query.float())
 
             query_repr = query_repr.numpy()
