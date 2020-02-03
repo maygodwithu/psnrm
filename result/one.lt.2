@@ -1,0 +1,77 @@
+doc_id tensor([[59235]])
+my_Mean None
+my_ReLU None
+my_Conv2d None
+my_ReLU None
+my_Conv2d None
+my_ReLU None
+my_Conv2d None
+=== conv mode1 ===
+save input shape =  torch.Size([1, 300, 1, 1000])
+weight shape =  torch.Size([500, 300, 1, 5])
+out shape =  torch.Size([1, 500, 1, 1000])
+out[>0] =  315298
+out[<0] =  184702
+out[0] =  tensor(-0.0086)
+weight[>0] =  377654
+weight[0,0] =  tensor([[ 0.0254,  0.0132, -0.0126,  0.0115,  0.0181]], requires_grad=True)
+=== conv mode1 ===
+save input shape =  torch.Size([1, 500, 1, 1000])
+weight shape =  torch.Size([300, 500, 1, 1])
+out shape =  torch.Size([1, 300, 1, 1000])
+out[>0] =  255059
+out[<0] =  44941
+out[0] =  tensor(0.0815)
+weight[>0] =  81716
+weight[0,0] =  tensor([[0.0403]], requires_grad=True)
+=== conv mode1 ===
+save input shape =  torch.Size([1, 300, 1, 1000])
+weight shape =  torch.Size([10000, 300, 1, 1])
+out shape =  torch.Size([1, 10000, 1, 1000])
+out[>0] =  280339
+out[<0] =  9719661
+out[0] =  tensor(-0.2307)
+weight[>0] =  1435179
+weight[0,0] =  tensor([[-0.0574]], requires_grad=True)
+count(repr dimension > 0) =  4235
+=== mean ebackwrd ===
+pre_out shape = torch.Size([1, 10000, 1, 1000])
+selp shape =  torch.Size([57])
+prev shape =  torch.Size([57])
+nrs shape  = torch.Size([3, 57])
+channel size  = 1000
+curv sum =  tensor(0.8068)
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([300000])
+weight shape = torch.Size([10000, 300, 1, 1])
+selp shape =  torch.Size([965])
+nrs shape  = torch.Size([3, 965])
+curv sum =  tensor(5.5388)
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([500000])
+weight shape = torch.Size([300, 500, 1, 1])
+selp shape =  torch.Size([6339])
+nrs shape  = torch.Size([3, 6339])
+curv sum =  tensor(15.2330)
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([300000])
+weight shape = torch.Size([500, 300, 1, 5])
+selp shape =  torch.Size([6891])
+nrs shape  = torch.Size([3, 6891])
+curv sum =  tensor(29.1643)
+word sum nonzero count =  61
+top 20 position= tensor([ 72,  76,  73, 343, 366, 364, 373, 298, 299, 372,  36, 363, 758, 390,
+        757,  35, 294, 389, 293, 993])
+top 20 value= tensor([9.7622, 9.4600, 7.9994, 0.8485, 0.4430, 0.3681, 0.3374, 0.2716, 0.1971,
+        0.1795, 0.1555, 0.1304, 0.1296, 0.1253, 0.1176, 0.1176, 0.1136, 0.1024,
+        0.0984, 0.0893])
+top 20 count position= tensor([343,  76, 777, 191, 377, 366,  36, 190, 311,  73,  35, 390, 886, 714,
+        298, 341, 758, 756, 201, 293])
+top 20 count = tensor([111., 101.,  77.,  74.,  74.,  74.,  72.,  72.,  70.,  69.,  69.,  69.,
+         66.,  65.,  64.,  63.,  63.,  63.,  62.,  62.])

@@ -1,0 +1,90 @@
+doc_id tensor([[59235]])
+my_Mean None
+my_ReLU None
+my_Conv2d None
+my_ReLU None
+my_Conv2d None
+my_ReLU None
+my_Conv2d None
+=== conv mode1 ===
+save input shape =  torch.Size([1, 300, 1, 1000])
+weight shape =  torch.Size([500, 300, 1, 5])
+out shape =  torch.Size([1, 500, 1, 1000])
+out[>0] =  269664
+out[<0] =  230336
+out[0] =  tensor(0.0114)
+weight[>0] =  367837
+weight[0,0] =  tensor([[ 0.0165, -0.0041, -0.0194,  0.0055,  0.0120]], requires_grad=True)
+=== conv mode1 ===
+save input shape =  torch.Size([1, 500, 1, 1000])
+weight shape =  torch.Size([300, 500, 1, 1])
+out shape =  torch.Size([1, 300, 1, 1000])
+out[>0] =  213518
+out[<0] =  86482
+out[0] =  tensor(0.0682)
+weight[>0] =  76837
+weight[0,0] =  tensor([[0.0359]], requires_grad=True)
+=== conv mode1 ===
+save input shape =  torch.Size([1, 300, 1, 1000])
+weight shape =  torch.Size([10000, 300, 1, 1])
+out shape =  torch.Size([1, 10000, 1, 1000])
+out[>0] =  188364
+out[<0] =  9811636
+out[0] =  tensor(-0.0956)
+weight[>0] =  1421640
+weight[0,0] =  tensor([[0.0079]], requires_grad=True)
+count(repr dimension > 0) =  2607
+init_nr shape =  torch.Size([3, 2607])
+init_nr =  tensor([[9.2720e+03, 1.3930e+03, 1.4580e+03,  ..., 7.8060e+03, 1.8500e+02,
+         2.0830e+03],
+        [2.8035e-02, 2.4102e-02, 2.0092e-02,  ..., 8.9011e-09, 8.0634e-09,
+         1.5618e-09],
+        [8.5838e-03, 7.3797e-03, 6.1520e-03,  ..., 2.7254e-09, 2.4689e-09,
+         4.7821e-10]])
+=== mean ebackwrd ===
+pre_out shape = torch.Size([1, 10000, 1, 1000])
+selp shape =  torch.Size([81037])
+prev shape =  torch.Size([81037])
+nrs shape  = torch.Size([3, 81037])
+channel size  = 1000
+curv sum =  tensor(0.7031)
+tensor([[1.8508e+05, 7.2621e+06, 1.1334e+06,  ..., 4.0910e+05, 9.2729e+06,
+         9.2722e+06],
+        [8.0634e-06, 2.9580e-05, 2.9657e-05,  ..., 2.7283e-02, 7.3367e-02,
+         7.4721e-02],
+        [2.4689e-09, 9.0569e-09, 9.0806e-09,  ..., 8.3538e-06, 2.2464e-05,
+         2.2879e-05]])
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([300000])
+weight shape = torch.Size([10000, 300, 1, 1])
+selp shape =  torch.Size([25877])
+nrs shape  = torch.Size([3, 25877])
+curv sum =  tensor(-0.4145)
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([500000])
+weight shape = torch.Size([300, 500, 1, 1])
+selp shape =  torch.Size([63706])
+nrs shape  = torch.Size([3, 63706])
+curv sum =  tensor(-1.5633)
+=== Relu ebackwrd ===
+!now nothing done. but highly recommend to check ReLU value is 1
+=== Conv2d ebackward ===
+pre_out shape = torch.Size([300000])
+weight shape = torch.Size([500, 300, 1, 5])
+selp shape =  torch.Size([46399])
+nrs shape  = torch.Size([3, 46399])
+curv sum =  tensor(24.7684)
+word sum nonzero count =  465
+top 20 position= tensor([356, 354, 280, 357, 278, 353, 359, 358, 106, 915, 390, 108, 551, 549,
+        552, 914, 413, 408, 389, 971])
+top 20 value= tensor([7.5871, 4.5030, 4.2908, 3.8238, 2.9399, 2.7429, 0.1493, 0.1488, 0.1182,
+        0.0877, 0.0846, 0.0692, 0.0638, 0.0618, 0.0554, 0.0503, 0.0484, 0.0435,
+        0.0370, 0.0342])
+top 20 count position= tensor([343, 195,  76, 377, 394, 341, 348, 191, 364, 235, 390, 396, 933, 783,
+        907, 108, 389,  40,  35, 777])
+top 20 count = tensor([125., 125., 117., 112., 101.,  90.,  87.,  87.,  85.,  83.,  83.,  82.,
+         81.,  80.,  79.,  79.,  79.,  78.,  78.,  78.])
