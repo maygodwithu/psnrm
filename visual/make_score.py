@@ -39,10 +39,9 @@ for ind in sorted_ind:
 
 
 #3. draw graph
-plt.figure(figsize=(10, 10))
+plt.figure(figsize=(40, 5))
 df = pd.DataFrame(dict(dim=np.arange(10000), value=dot))
-g = sns.relplot(x='dim', y='value', kind="scatter", data=df)
+g = sns.lineplot(x='dim', y='value', data=df)
 
 #plt.savefig("repr_all.png")
-plt.savefig("score.png")
-
+plt.savefig("score_al.png")
