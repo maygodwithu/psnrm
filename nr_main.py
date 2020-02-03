@@ -30,22 +30,28 @@ def train():
 
     #3. read train data
     train_data = Triplet('train', args, dictionary)
+    valid_data = Triplet('valid', args, dictionary, train_data.embeddings)
     
     #4. train
     db_loader = DataLoader(dataset=train_data, batch_size=args.batch_size, shuffle=True, num_workers=0)
+    vdb_loader = DataLoader(dataset=valid_data, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
     for epoch in range(args.epoch):
         for i, (query, doc1, doc2, label)  in enumerate(db_loader):
             query, doc1, doc2, label = query.to(device), doc1.to(device), doc2.to(device), label.to(device)
             assert(query.shape[1] == args.emb_dim)
 
-            accs = snrm.model_train(query, doc1, doc2, label)
+            accs, loss = snrm.model_train(query, doc1, doc2, label)
             if(i % 1 == 0):
-                print('epoch : ', epoch, ' step:', i, '\ttraing cost:', accs.item(), '\r', file=sys.stderr, end='')  
+                print('epoch : ', epoch, ' step:', i, '\ttraing cost:', accs.item(), '\r', file=sys.stdout, end='')  
 
-            if(i % 100 == 0):
+            if(i % 100 == 99):
                 ## evaluation()                                 ## evaluation per 100-batch  
                 torch.save(snrm.state_dict(), args.model_file)  ## save model per 100-batch
+                for j, (query, doc1, doc2, label)  in enumerate(vdb_loader):
+                    query, doc1, doc2, label = query.to(device), doc1.to(device), doc2.to(device), label.to(device)
+                    accs, loss = snrm.model_valid(query, doc1, doc2, label)
+                    print('Valid step step:', j, '\tloss value :', loss.item(), '\r', file=sys.stdout, end='')  
 
         torch.save(snrm.state_dict(), args.model_file)  ## save model per epoch
 
@@ -75,7 +81,7 @@ def build_index():
    
     inverted_index = InMemoryInvertedIndex(args.conv3_channel)  ## last channel is output representation
     with torch.no_grad():
-        for i, (doc_id, doc, doc_idx)  in enumerate(db_loader):
+        for i, (doc_id, doc)  in enumerate(db_loader):
             doc_repr = snrm(doc.float())
             inverted_index.add(doc_id.numpy(), doc_repr.numpy())
             if(i % 10 == 0):
@@ -110,7 +116,7 @@ def retrieve():
     #6. retrieve
     with torch.no_grad():
         result = dict()
-        for k, (q_id, query, q_idx)  in enumerate(db_loader):
+        for k, (q_id, query)  in enumerate(db_loader):
             query_repr = snrm(query.float())
 
             query_repr = query_repr.numpy()
@@ -151,13 +157,14 @@ if __name__ == '__main__':
     argparser.add_argument('--batch_size', type=int, help='batch size', default=64)  ## 512
     argparser.add_argument('--learning_rate', type=float, help='learning rate with ADAM', default=0.0001)
     argparser.add_argument('--dropout_parameter', type=float, help='dropout', default=0.0)
-    argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0000001) ## 0.1^10-8 ( sparcity : 0.65)
+    argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.000001) ## 0.1^10-8 ( sparcity : 0.65)
     #argparser.add_argument('--regularization_term', type=float, help='regularization', default=0.0001)
 
     ## file name
     argparser.add_argument('--emb_dim', type=int, help='embedding dimension', default=300)
     argparser.add_argument('--dict_file', type=str, help='dictionary file name', default='data/dictionary.txt')
     argparser.add_argument('--train_file', type=str, help='train file name', default='data/triples.tsv')
+    argparser.add_argument('--valid_file', type=str, help='valid file name', default='data/triples_valid.tsv')
     argparser.add_argument('--doc_file', type=str, help='doc file name', default='data/triples.tsv_doc_100')
     argparser.add_argument('--query_file', type=str, help='query file name', default='data/triples.tsv_q')
     argparser.add_argument('--pre_trained_embedding_file', type=str, help='embedding file name', default='data/embedding.txt')

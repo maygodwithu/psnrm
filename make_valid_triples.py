@@ -162,7 +162,7 @@ def generate_triples(outfile, triples_to_generate):
 
 
 #stats = generate_triples("./data/triples.tsv", 1000)
-stats = generate_triples("./data/triples.tsv", 350000)
+stats = generate_triples("./data/triples.tsv", 100000)
 #stats = generate_triples("./data/test.tsv", 2)
 
 for key, val in stats.items():

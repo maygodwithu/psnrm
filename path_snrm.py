@@ -27,6 +27,7 @@ class SNRM(nn.Module):
 
         ## hinge loss
         self.loss = nn.HingeEmbeddingLoss()
+#        self.loss = nn.MarginRankingLoss()
 
         ## optimizer
         self.optimizer = optim.Adam(self.parameters(), lr = args.learning_rate)
@@ -48,11 +49,20 @@ class SNRM(nn.Module):
         layers += [my_Mean(dim=(2,3))]
         return nn.Sequential(*layers)
 
+    def model_valid(self, query, doc1, doc2, label):
+        with torch.no_grad():
+            q_repr = self.forward(query.float())
+            d1_repr = self.forward(doc1.float())
+            d2_repr = self.forward(doc2.float())
+            logits_d1 = torch.sum(q_repr * d1_repr, 1, keepdim=True) 
+            logits_d2 = torch.sum(q_repr * d2_repr, 1, keepdim=True) 
+            logits = torch.cat([logits_d1, logits_d2], dim=1)
+            loss = self.loss(logits, label)
+            l1_regular = torch.norm(q_repr, p=1)+torch.norm(d1_repr, p=1)+torch.norm(d2_repr, p=1)
+            cost = loss + self.regularization * l1_regular
+        return cost, loss
+
     def model_train(self, query, doc1, doc2, label):
-        #print(query.shape) 
-        #print(doc1.shape) 
-        #print(doc2.shape) 
-        #print(label.shape) 
         q_repr = self.forward(query.float())
         d1_repr = self.forward(doc1.float())
         d2_repr = self.forward(doc2.float())
@@ -62,12 +72,10 @@ class SNRM(nn.Module):
         logits_d1 = torch.sum(q_repr * d1_repr, 1, keepdim=True) 
         logits_d2 = torch.sum(q_repr * d2_repr, 1, keepdim=True) 
         logits = torch.cat([logits_d1, logits_d2], dim=1)
-        #print((q_repr*d1_repr).shape)
-        #print((q_repr*d2_repr).shape)
         #print(logits_d1.shape)
         #print(logits_d2.shape)
         #print(logits)
-        #print(label)
+        #print(label.shape)
         #print(logits.shape)
         loss = self.loss(logits, label)
         l1_regular = torch.norm(q_repr, p=1)+torch.norm(d1_repr, p=1)+torch.norm(d2_repr, p=1)
@@ -84,8 +92,7 @@ class SNRM(nn.Module):
         cost.backward()
         self.optimizer.step()
   
-        return cost
-
+        return cost, loss
        
     def forward(self, x):
         out = self.features(x)

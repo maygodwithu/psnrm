@@ -313,19 +313,30 @@ class epathfinder():
         y = self.first_pass(x)
         class_num = len(y[y>0])
 
-        if self._verbose:
-            print('count(repr dimension > 0) = ', class_num)
+        total_v = torch.sum(y[y>0])
 
-        # set initial point
-        init_nr = torch.zeros(3, class_num)  ## make initial path [[neuron, value]]
-        total_v = torch.sum(y)
-        if(total_v == 0): total_v = 1.0
-
+        nv = total_v * Theta
+        tvsum=0
         tv, tp = torch.sort(y.flatten(), descending=True)
         for i in range(class_num):
+            tvsum += tv[i].item()
+            if(tvsum > nv): break
+        sel_class = i
+
+        if self._verbose:
+            print('count(repr dimension > 0) = ', class_num)
+            print('count(repr sel dimension) = ', sel_class)
+            print('total_v = ', total_v)
+
+        # set initial point
+        init_nr = torch.zeros(3, sel_class)  ## make initial path [[neuron, value]]
+
+        if(total_v == 0): total_v = 1.0
+        for i in range(sel_class):
             init_nr[0,i] = tp[i].item()
             init_nr[1,i] = tv[i].item()
             init_nr[2,i] = tv[i].item() / total_v
+
         print('init_nr shape = ', init_nr.shape)
         print('init_nr = ', init_nr)
     

@@ -8,7 +8,7 @@ import numpy as np
 import util
 
 class Triplet(Dataset):
-    def __init__(self, mode, args, dictionary):
+    def __init__(self, mode, args, dictionary, embed=None):
         self.mode = mode
         self.dictionary = dictionary
         self.emb_dim = args.emb_dim
@@ -19,13 +19,18 @@ class Triplet(Dataset):
 
         if(self.mode == 'train'):
             data_file = args.train_file
+        elif(self.mode == 'valid'):
+            data_file = args.valid_file
         elif(self.mode == 'doc'):
             data_file = args.doc_file
         elif(self.mode == 'query'):
             data_file = args.query_file
 
         self.datalines = self.loadData(data_file)
-        self.embeddings = self.readEmbedding(args.pre_trained_embedding_file)
+        if(embed is None):
+            self.embeddings = self.readEmbedding(args.pre_trained_embedding_file)
+        else:
+            self.embeddings = embed
         
     def loadData(self, fname):
         data = []
@@ -53,7 +58,7 @@ class Triplet(Dataset):
         line = self.datalines[index]
         psd = (line.rstrip()).split('\t')    
 
-        if(self.mode == 'train'):
+        if(self.mode == 'train' or self.mode == 'valid'):
             query = np.fromstring(psd[0], dtype=int, sep=',')
             doc1 = np.fromstring(psd[1], dtype=int, sep=',')
             doc2 = np.fromstring(psd[2], dtype=int, sep=',')
@@ -62,7 +67,7 @@ class Triplet(Dataset):
             query = torch.from_numpy(self.len_check(query, self.max_q_len))
             doc1 = torch.from_numpy(self.len_check(doc1, self.max_doc_len))
             doc2 = torch.from_numpy(self.len_check(doc2, self.max_doc_len))
-            #label = torch.from_numpy(np.concatenate([label, 0-label]))
+            #label = torch.from_numpy(np.concatenate([label]))
             label = torch.from_numpy(np.concatenate([0-label, label]))
   
             #print(query)
@@ -87,7 +92,7 @@ class Triplet(Dataset):
 
             doc_emb = torch.index_select(self.embeddings, 0, doc).unsqueeze(1)
             
-            return doc_id, doc_emb.transpose(0,2), doc
+            return doc_id, doc_emb.transpose(0,2)
 
         elif(self.mode == 'query'):
             q_id  = np.fromstring(psd[0], dtype=int, sep=',')
@@ -98,7 +103,7 @@ class Triplet(Dataset):
 
             query_emb = torch.index_select(self.embeddings, 0, query).unsqueeze(1)
             
-            return q_id, query_emb.transpose(0,2), query
+            return q_id, query_emb.transpose(0,2)
            
         else:
             return None
